@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os/exec"
 	"strconv" // Added for converting int to string
 	"strings"
 	"sync"
@@ -348,7 +349,87 @@ func (m *Middleware) replicationSummaryHandler(w http.ResponseWriter, r *http.Re
 	}
 }
 
-// --- End Replication Status ---
+// --- Node Control Handler (CORRECTED) ---
+
+// handleNodeControl processes requests to start/stop node containers.
+func handleNodeControl(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Expected path: /control/node/{id}/{action}
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/"), "/")
+	if len(parts) != 4 || parts[0] != "control" || parts[1] != "node" {
+		http.Error(w, "Invalid control path", http.StatusBadRequest)
+		return
+	}
+
+	nodeIDStr := parts[2]
+	action := parts[3]
+
+	nodeID, err := strconv.Atoi(nodeIDStr)
+	if err != nil || nodeID < 1 || nodeID > max_Nodes {
+		http.Error(w, "Invalid node ID", http.StatusBadRequest)
+		return
+	}
+
+	if action != "start" && action != "stop" {
+		http.Error(w, "Invalid action (use 'start' or 'stop')", http.StatusBadRequest)
+		return
+	}
+
+	// --- CORRECTED Container Name ---
+	// Use the explicit container name defined in docker-compose.yml
+	containerName := fmt.Sprintf("node-%d", nodeID)
+	// --- End CORRECTED Container Name ---
+
+	log.Printf("Executing command: docker %s %s", action, containerName)
+
+	// Execute the docker command
+	cmd := exec.Command("docker", action, containerName)
+	output, err := cmd.CombinedOutput() // Get stdout and stderr
+
+	log.Printf("Command output: %s", string(output))
+
+	response := map[string]string{}
+	if err != nil {
+		log.Printf("Error executing docker command: %v", err)
+		response["status"] = "error"
+		// Updated error message to show the target container name
+		response["message"] = fmt.Sprintf("Failed to %s container '%s': %v. Output: %s", action, containerName, err, string(output))
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		response["status"] = "success"
+		// Updated success message
+		response["message"] = fmt.Sprintf("Container '%s' %s request sent successfully. Output: %s", containerName, action, string(output))
+		w.WriteHeader(http.StatusOK)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+// --- End Node Control Handler ---
+
+// handleGetCurrentLeader returns the leader ID currently known by the middleware.
+func (m *Middleware) handleGetCurrentLeader(w http.ResponseWriter, r *http.Request) {
+	m.mutex.RLock()
+	// Use -1 or 0 to indicate no leader known, matching how it's initialized/set
+	leader := m.currentLeader
+	m.mutex.RUnlock()
+
+	response := map[string]interface{}{
+		"currentLeaderId": leader, // Will be -1 if no leader is currently known
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Error encoding current leader response: %v", err)
+		// Can't reliably write http error if encoding fails late
+	}
+}
+
+// --- End Current Leader Handler ---
 
 // main function updated to use ServeMux and apply CORS correctly.
 func main() {
@@ -360,6 +441,10 @@ func main() {
 
 	// Register the specific handler for replication status
 	mux.HandleFunc("/replication-summary", middleware.replicationSummaryHandler)
+
+	mux.HandleFunc("/control/node/", handleNodeControl) // Handles /control/node/1/start etc.
+
+	mux.HandleFunc("/current-leader", middleware.handleGetCurrentLeader)
 
 	// Register the main middleware handler for all other paths (e.g., /asia/query)
 	// The Middleware struct itself implements ServeHTTP for this purpose.
