@@ -474,6 +474,26 @@ func startHTTPServer(node *Node) {
 		fmt.Fprintf(w, "Current leader: Node %d (Term: %d)\n", node.lastKnownLeader, node.term)
 	})
 
+	// Add this handler
+	http.HandleFunc("/log-status", func(w http.ResponseWriter, r *http.Request) {
+		// Call the new function from database.go
+		lastID, lastTimestamp, err := getLatestLogEntry()
+		if err != nil {
+			log.Printf("Node %d: Error getting latest log entry: %v", node.ID, err)
+			http.Error(w, "Failed to get log status", http.StatusInternalServerError)
+			return
+		}
+		status := map[string]interface{}{
+			"nodeId":           node.ID,
+			"lastLogId":        lastID,
+			"lastLogTimestamp": lastTimestamp.Format(time.RFC3339Nano), // Format timestamp as ISO 8601 string
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(status); err != nil {
+			log.Printf("Node %d: Error encoding log status response: %v", node.ID, err)
+		}
+	})
+
 	http.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
 		node.mutex.RLock()
 		defer node.mutex.RUnlock()
