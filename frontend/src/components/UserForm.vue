@@ -1,26 +1,32 @@
 <template>
-  <div>
+  <div class="form-container">
     <h2>Create New User</h2>
     <form @submit.prevent="createUser">
-      <div>
+      <div class="form-group">
         <label for="email">Email:</label>
-        <input type="email" id="email" v-model="newUser.email" required>
+        <input type="email" id="email" v-model="newUser.email" required class="form-input">
       </div>
-      <div>
+      <div class="form-group">
         <label for="password">Password:</label>
-        <input type="password" id="password" v-model="newUser.password" required>
+        <input type="password" id="password" v-model="newUser.password" required class="form-input">
         <small>Warning: Password will be sent as provided. Ensure backend handles hashing if needed.</small>
       </div>
-      <div>Permissions:</div>
-       <label><input type="checkbox" v-model="newUser.R1"> R1</label>
-       <label><input type="checkbox" v-model="newUser.R2"> R2</label>
-       <label><input type="checkbox" v-model="newUser.R3"> R3</label>
-       <label><input type="checkbox" v-model="newUser.R4"> R4</label>
+      <div class="form-group">
+        <div class="permissions-label">Permissions:</div>
+        <div class="permissions-row">
+          <label class="permission-item"><input type="checkbox" v-model="newUser.R1"> R1</label>
+          <label class="permission-item"><input type="checkbox" v-model="newUser.R2"> R2</label>
+          <label class="permission-item"><input type="checkbox" v-model="newUser.R3"> R3</label>
+          <label class="permission-item"><input type="checkbox" v-model="newUser.R4"> R4</label>
+        </div>
+      </div>
 
-      <button type="submit">Create User</button>
+      <button type="submit" class="submit-button">Create User</button>
     </form>
-     <p v-if="message">{{ message }}</p>
-     <p v-if="error">{{ error }}</p>
+    <div class="message-container">
+      <p v-if="message" class="success-message">{{ message }}</p>
+      <p v-if="error" class="error-message">{{ error }}</p>
+    </div>
   </div>
 </template>
 
@@ -72,7 +78,87 @@ export default {
 </script>
 
 <style scoped>
-form div { margin-bottom: 10px; }
-label { margin-right: 5px; }
-small { display: block; color: grey; }
+.form-container {
+  max-width: 500px;
+  padding: 20px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+h2 {
+  margin-top: 0;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.permissions-label {
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.permissions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.permission-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.permission-item input[type="checkbox"] {
+  margin-right: 5px;
+}
+
+.submit-button {
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.submit-button:hover {
+  background-color: #3a7bc8;
+}
+
+.message-container {
+  margin-top: 15px;
+}
+
+.success-message {
+  padding: 8px;
+  background-color: #e6f7e6;
+  color: #2c662d;
+  border-radius: 4px;
+}
+
+.error-message {
+  padding: 8px;
+  background-color: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+}
+
+small {
+  display: block;
+  color: grey;
+  margin-top: 5px;
+}
 </style>

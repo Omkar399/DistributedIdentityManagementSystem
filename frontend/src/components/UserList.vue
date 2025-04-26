@@ -1,34 +1,42 @@
 <template>
-  <div>
+  <div class="form-container">
     <h2>User List</h2>
-    <button @click="fetchUsers" :disabled="loading">Refresh Users</button>
-    <div v-if="loading">Loading...</div>
-    <table v-else-if="users.length > 0">
-      <thead>
-        <tr>
-          <th>Email</th>
-          <th>R1</th> <!-- Table header -->
-          <th>R2</th> <!-- Table header -->
-          <th>R3</th> <!-- Table header -->
-          <th>R4</th> <!-- Table header -->
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(user, index) in users" :key="user.email">
-          <td>{{ user.email }}</td>
-          <!-- Bind checkbox state to lowercase keys (from SELECT data) -->
-          <!-- Pass uppercase keys to togglePermission for the UPDATE payload -->
-          <td><input type="checkbox" :checked="user.r1" @change="togglePermission(index, 'R1', $event)"></td>
-          <td><input type="checkbox" :checked="user.r2" @change="togglePermission(index, 'R2', $event)"></td>
-          <td><input type="checkbox" :checked="user.r3" @change="togglePermission(index, 'R3', $event)"></td>
-          <td><input type="checkbox" :checked="user.r4" @change="togglePermission(index, 'R4', $event)"></td>
-          <td><!-- Optional: Add Edit/Delete buttons --></td>
-        </tr>
-      </tbody>
-    </table>
-    <p v-else>No users found.</p>
-    <p v-if="error" style="color: red;">{{ error }}</p>
+    <div class="controls">
+      <button @click="fetchUsers" :disabled="loading" class="submit-button">Refresh Users</button>
+      <div v-if="loading" class="loading-indicator">Loading...</div>
+    </div>
+    
+    <div class="table-container" v-if="users.length > 0">
+      <table>
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>R1</th>
+            <th>R2</th>
+            <th>R3</th>
+            <th>R4</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="(user, index) in users" :key="user.email">
+            <td>{{ user.email }}</td>
+            <td class="checkbox-cell"><input type="checkbox" :checked="user.r1" @change="togglePermission(index, 'R1', $event)"></td>
+            <td class="checkbox-cell"><input type="checkbox" :checked="user.r2" @change="togglePermission(index, 'R2', $event)"></td>
+            <td class="checkbox-cell"><input type="checkbox" :checked="user.r3" @change="togglePermission(index, 'R3', $event)"></td>
+            <td class="checkbox-cell"><input type="checkbox" :checked="user.r4" @change="togglePermission(index, 'R4', $event)"></td>
+            <td><!-- Optional: Add Edit/Delete buttons --></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    
+    <p v-else-if="!loading" class="empty-message">No users found.</p>
+    
+    <div v-if="error" class="alert error">
+      <span class="alert-icon">!</span>
+      {{ error }}
+    </div>
   </div>
 </template>
 
@@ -105,8 +113,108 @@ export default {
 </script>
 
 <style scoped>
-table { width: 100%; border-collapse: collapse; margin-top: 10px;}
-th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-thead { background-color: #f2f2f2; }
-p[style*="color: red"] { margin-top: 10px; font-weight: bold; }
+.form-container {
+  max-width: 800px;
+  padding: 20px;
+  background: white;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+h2 {
+  margin-top: 0;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.loading-indicator {
+  margin-left: 15px;
+  color: #666;
+}
+
+.submit-button {
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.submit-button:hover {
+  background-color: #3a7bc8;
+}
+
+.submit-button:disabled {
+  background-color: #a0c4e8;
+  cursor: not-allowed;
+}
+
+.table-container {
+  margin-top: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: left;
+}
+
+th {
+  background-color: #f2f2f2;
+  font-weight: 500;
+}
+
+.checkbox-cell {
+  text-align: center;
+}
+
+.checkbox-cell input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.empty-message {
+  padding: 15px;
+  background-color: #f8f8f8;
+  border-radius: 4px;
+  color: #666;
+  font-style: italic;
+  text-align: center;
+}
+
+.alert {
+  margin-top: 15px;
+  padding: 10px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+}
+
+.alert-icon {
+  margin-right: 8px;
+  font-weight: bold;
+}
+
+.error {
+  background-color: #ffebee;
+  color: #c62828;
+  border-left: 4px solid #f44336;
+}
 </style>
