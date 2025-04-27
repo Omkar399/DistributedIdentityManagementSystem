@@ -44,8 +44,9 @@
 
 <script>
 import axios from 'axios';
+import { API_BASE_URL } from '@/config';
 
-const STATUS_API_URL = 'http://localhost:8090/replication-summary';
+const STATUS_API_URL = `${API_BASE_URL}/replication-summary`;
 const POLLING_INTERVAL = 10000;
 
 export default {

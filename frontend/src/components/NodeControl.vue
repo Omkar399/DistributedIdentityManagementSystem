@@ -62,10 +62,11 @@
 
 <script>
 import axios from 'axios';
+import { API_BASE_URL } from '@/config';
 
-const CONTROL_API_URL_BASE = 'http://localhost:8090/control/node';
-const STATUS_API_URL = 'http://localhost:8090/replication-summary';
-const LEADER_API_URL = 'http://localhost:8090/current-leader';
+const CONTROL_API_URL_BASE = `${API_BASE_URL}/control/node`;
+const STATUS_API_URL = `${API_BASE_URL}/replication-summary`;
+const LEADER_API_URL = `${API_BASE_URL}/current-leader`;
 const STATUS_POLLING_INTERVAL = 5000;
 const LEADER_POLLING_INTERVAL = 3000;
 

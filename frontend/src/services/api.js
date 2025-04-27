@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { API_BASE_URL, API_REGION } from '@/config';
 
 // Use the middleware address and port
 // The middleware requires a region in the path, e.g., /asia/ or /usa/
 // Ensure this matches your middleware setup and CORS configuration
-const API_URL = 'http://localhost:8090/asia'; // Adjust region if needed
+const API_URL = `${API_BASE_URL}/${API_REGION}`; 
 
 const apiClient = axios.create({
   baseURL: API_URL,
