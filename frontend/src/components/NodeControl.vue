@@ -1,22 +1,22 @@
 <template>
   <div class="form-container">
     <h2>Node Control</h2>
-    
+
     <div class="leader-display">
       Current Leader:
       <strong v-if="currentLeaderId > 0">Node {{ currentLeaderId }}</strong>
       <span v-else>Unknown / Election in Progress?</span>
     </div>
-    
+
     <p class="warning-message">Warning: These actions directly interact with Docker containers.</p>
-    
+
     <div v-if="message" :class="['alert', messageType]">
       <span class="alert-icon" v-if="messageType === 'success'">✓</span>
       <span class="alert-icon" v-if="messageType === 'error'">!</span>
       <span class="alert-icon" v-if="messageType === 'info'">i</span>
       {{ message }}
     </div>
-    
+
     <div class="table-container">
       <table>
         <thead>
@@ -27,7 +27,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="nodeId in nodeIds" :key="nodeId" :class="{ 'leader-row': nodeId === currentLeaderId }">
+           <tr v-for="nodeId in nodeIds" :key="nodeId" :class="{ 'leader-row': nodeId === currentLeaderId }">
             <td>Node {{ nodeId }}</td>
             <td>
               <span :class="['status-indicator', getNodeRunStatusClass(nodeId)]">
@@ -47,8 +47,12 @@
         </tbody>
       </table>
     </div>
-    
-    <div v-if="statusLoading" class="status-loading">Fetching node statuses...</div>
+
+    <!-- Wrapper to reserve space -->
+    <div class="status-loading-placeholder">
+      <div v-if="statusLoading" class="status-loading">Fetching node statuses...</div>
+    </div>
+
     <div v-if="statusFetchError" class="alert error">
       <span class="alert-icon">!</span>
       {{ statusFetchError }}
@@ -345,10 +349,18 @@ tr.leader-row td {
   margin-left: 10px;
 }
 
+/* New class for the placeholder wrapper */
+.status-loading-placeholder {
+  min-height: 1.2em; /* Reserves space roughly equivalent to one line of the text below */
+  margin-top: 10px; /* Keeps the original top margin */
+  /* You might need to adjust min-height based on font size and line-height */
+}
+
+/* Original class, now inside the placeholder */
 .status-loading {
   font-size: 0.9em;
   font-style: italic;
   color: #666;
-  margin-top: 10px;
+  /* margin-top: 10px; <-- Removed, now handled by placeholder */
 }
 </style>
