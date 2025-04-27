@@ -453,9 +453,9 @@ func main() {
 
 	// Configure CORS options (using options similar to user's original intent)
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:8080"},                   // Frontend origin
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}, // Common methods
-		AllowedHeaders:   []string{"Content-Type", "Authorization", "*"},      // Allow common headers + others
+		AllowedOrigins:   []string{"http://localhost:8080", "http://localhost:8081", "*"}, // Include all origins
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},             // Common methods
+		AllowedHeaders:   []string{"Content-Type", "Authorization", "*"},                  // Allow common headers + others
 		AllowCredentials: true,
 		Debug:            true, // Useful for troubleshooting
 	})
