@@ -5,6 +5,8 @@
     <hr>
     <NodeControl /> <!-- Add the new component -->
     <hr>
+    <OperationsQueue />
+    <hr>
     <UserList ref="userList" />
     <hr>
     <LogViewer ref="logViewer" />
@@ -18,7 +20,8 @@ import UserList from './components/UserList.vue';
 import UserForm from './components/UserForm.vue';
 import LogViewer from './components/LogViewer.vue';
 import ReplicationStatus from './components/ReplicationStatus.vue';
-import NodeControl from './components/NodeControl.vue'; // Import
+import NodeControl from './components/NodeControl.vue';
+import OperationsQueue from './components/OperationsQueue.vue'; // Import the new component
 
 export default {
   name: 'App',
@@ -27,7 +30,8 @@ export default {
     UserForm,
     LogViewer,
     ReplicationStatus,
-    NodeControl, // Register
+    NodeControl,
+    OperationsQueue, // Register the new component
   },
   methods: {
       refreshData() {
