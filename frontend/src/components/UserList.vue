@@ -6,7 +6,7 @@
       <div v-if="loading" class="loading-indicator">Loading...</div>
     </div>
     
-    <div class="table-container" v-if="users.length > 0">
+    <div class="table-container" v-if="users && users.length > 0">
       <table>
         <thead>
           <tr>
@@ -59,9 +59,13 @@ export default {
       this.users = []; // Clear previous users
       try {
         const response = await api.getUsers();
-        // Assuming response.data is the array of user objects with lowercase boolean keys
-        this.users = response.data;
-        console.log('Fetched users:', JSON.parse(JSON.stringify(this.users))); // Deep copy for logging
+        // Handle null response data case (after system reset)
+        if (response.data === null) {
+          this.users = []; // Ensure users is an empty array, not null
+        } else {
+          this.users = response.data || []; // Use empty array as fallback
+        }
+        console.log('Fetched users:', JSON.parse(JSON.stringify(this.users || []))); // Safe logging
       } catch (err) {
         this.error = `Failed to fetch users: ${err.response?.data?.message || err.message}`;
         console.error(err);

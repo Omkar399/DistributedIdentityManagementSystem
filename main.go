@@ -519,6 +519,8 @@ func startHTTPServer(node *Node) {
 
 	http.HandleFunc("/getTreeFromLeader", GetTreeFromLeader)
 
+	http.HandleFunc("/reset", handleReset)
+
 	http.HandleFunc("/logs", func(w http.ResponseWriter, r *http.Request) {
 		if !node.Leader {
 			http.Error(w, "Only leader can serve logs", http.StatusForbidden)
@@ -695,4 +697,59 @@ func sendHeartbeats(node *Node) {
 			}(i)
 		}
 	}
+}
+
+// Add this to your import list if not already there
+// "io/ioutil"
+
+// Add this new handler function to multicast.go or main.go
+func handleReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Start a transaction
+	tx, err := db.Begin()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error starting transaction: %v", err), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+
+	// Delete all users
+	_, err = tx.Exec("DELETE FROM users")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error deleting users: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Delete all transaction logs
+	_, err = tx.Exec("DELETE FROM transaction_log")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error deleting transaction logs: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Reset sequence for transaction_log table
+	// (This line is crucial for resetting the last log ID)
+	_, err = tx.Exec("ALTER SEQUENCE transaction_log_id_seq RESTART WITH 1")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error resetting sequence: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Commit transaction
+	err = tx.Commit()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error committing transaction: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	// Send success response
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status":  "success",
+		"message": "System reset successfully",
+	})
 }

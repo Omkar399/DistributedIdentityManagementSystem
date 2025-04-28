@@ -57,6 +57,18 @@
       <span class="alert-icon">!</span>
       {{ statusFetchError }}
     </div>
+    
+    <!-- Reset System Button Section -->
+    <div class="danger-zone">
+      <h3>Danger Zone</h3>
+      <p class="danger-message">The following actions are destructive and cannot be undone.</p>
+      <button 
+        @click="resetSystem" 
+        :disabled="isResetting" 
+        class="reset-button">
+        {{ isResetting ? 'Resetting...' : 'Reset System (Delete All Data)' }}
+      </button>
+    </div>
   </div>
 </template>
 
@@ -84,6 +96,7 @@ export default {
       statusIntervalId: null,
       currentLeaderId: -1,
       leaderIntervalId: null,
+      isResetting: false, // Added for reset button state
     };
   },
   methods: {
@@ -167,6 +180,37 @@ export default {
              clearInterval(this.leaderIntervalId);
              this.leaderIntervalId = null;
          }
+    },
+    // New method for system reset
+    async resetSystem() {
+      // Show confirmation dialog
+      if (!confirm("WARNING: This will delete ALL users and transaction logs across all nodes. This action cannot be undone. Are you sure you want to proceed?")) {
+        return;
+      }
+      
+      this.isResetting = true;
+      this.message = "Resetting system data...";
+      this.messageType = "info";
+      
+      try {
+        const response = await axios.post(`${API_BASE_URL}/reset`);
+        console.log("Reset response:", response.data);
+        
+        this.message = "System reset successful. All data has been deleted.";
+        this.messageType = "success";
+        
+        // Refresh data after reset
+        setTimeout(() => {
+          this.fetchRunStatus();
+          this.fetchCurrentLeader();
+        }, 2000);
+      } catch (err) {
+        console.error("Reset Error:", err);
+        this.message = err.response?.data?.message || `System reset failed: ${err.message}`;
+        this.messageType = "error";
+      } finally {
+        this.isResetting = false;
+      }
     }
   },
   created() {
@@ -199,6 +243,13 @@ h2 {
   margin-top: 0;
   color: #333;
   margin-bottom: 20px;
+}
+
+h3 {
+  margin-top: 30px;
+  color: #c62828;
+  border-bottom: 1px solid #ffcdd2;
+  padding-bottom: 8px;
 }
 
 .leader-display {
@@ -363,5 +414,40 @@ tr.leader-row td {
   font-style: italic;
   color: #666;
   /* margin-top: 10px; <-- Removed, now handled by placeholder */
+}
+
+/* Danger Zone Styles */
+.danger-zone {
+  margin-top: 40px;
+  padding: 20px;
+  background-color: #ffebee;
+  border: 1px solid #ffcdd2;
+  border-radius: 4px;
+}
+
+.danger-message {
+  color: #c62828;
+  margin-bottom: 15px;
+  font-size: 0.9em;
+}
+
+.reset-button {
+  background-color: #c62828;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 200px;
+}
+
+.reset-button:hover:not(:disabled) {
+  background-color: #b71c1c;
+}
+
+.reset-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

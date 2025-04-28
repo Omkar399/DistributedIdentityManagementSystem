@@ -146,6 +146,8 @@ services:
     build: . # Uses the same Dockerfile (ensure it includes docker-cli)
     command: ./middleware
     container_name: middleware # Added explicit name
+    environment:
+      - MEMBERSHIP_HOST=membership:7946
     ports:
       - "8090:8090"
     depends_on: # Optional

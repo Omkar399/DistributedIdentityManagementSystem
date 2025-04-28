@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"os/exec"
 	"strconv" // Added for converting int to string
 	"strings"
@@ -31,6 +32,30 @@ type Request struct {
 	w    http.ResponseWriter
 	r    *http.Request
 	done chan error // Channel to signal completion (should be buffered)
+}
+
+// Add this function definition to middleware.go
+func getMembershipList(membershipHost string) (map[string]*MemberInfo1, error) {
+	resp, err := http.Get(fmt.Sprintf("http://%s/members", membershipHost))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get members: %v", err)
+	}
+	defer resp.Body.Close()
+
+	var members map[string]*MemberInfo1
+	if err := json.NewDecoder(resp.Body).Decode(&members); err != nil {
+		return nil, fmt.Errorf("failed to decode members: %v", err)
+	}
+	return members, nil
+}
+
+// Also add the MemberInfo1 struct definition
+type MemberInfo1 struct {
+	ID        string    `json:"id"`
+	Address   string    `json:"address"`
+	LeaseID   int64     `json:"lease_id"`
+	ExpiresAt time.Time `json:"expires_at"`
+	IsLeader  bool      `json:"is_leader"`
 }
 
 // Middleware holds the state for the middleware service.
@@ -431,6 +456,102 @@ func (m *Middleware) handleGetCurrentLeader(w http.ResponseWriter, r *http.Reque
 
 // --- End Current Leader Handler ---
 
+func handleMiddlewareReset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Get the membership host from environment variables
+	membershipHost := os.Getenv("MEMBERSHIP_HOST")
+	if membershipHost == "" {
+		log.Printf("MEMBERSHIP_HOST environment variable not set")
+		http.Error(w, "Server configuration error: MEMBERSHIP_HOST not set", http.StatusInternalServerError)
+		return
+	}
+
+	// Forward reset request to all nodes
+	members, err := getMembershipList(membershipHost)
+	if err != nil {
+		log.Printf("Error getting membership list: %v", err)
+		http.Error(w, fmt.Sprintf("Failed to get membership list: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if len(members) == 0 {
+		log.Printf("No members found in membership list")
+		http.Error(w, "No members found in membership list", http.StatusInternalServerError)
+		return
+	}
+
+	var wg sync.WaitGroup
+	errors := make(chan string, len(members))
+
+	log.Printf("Attempting to reset %d nodes", len(members))
+
+	for _, member := range members {
+		wg.Add(1)
+		go func(address string) {
+			defer wg.Done()
+			client := &http.Client{Timeout: 10 * time.Second}
+
+			log.Printf("Sending reset request to %s", address)
+			resp, err := client.Post(fmt.Sprintf("http://%s/reset", address), "application/json", nil)
+			if err != nil {
+				log.Printf("Error resetting node at %s: %v", address, err)
+				errors <- fmt.Sprintf("Failed to reset node at %s: %v", address, err)
+				return
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				body, _ := ioutil.ReadAll(resp.Body)
+				log.Printf("Node at %s responded with non-OK status %d: %s", address, resp.StatusCode, string(body))
+				errors <- fmt.Sprintf("Node at %s responded with status %d: %s", address, resp.StatusCode, string(body))
+			} else {
+				log.Printf("Successfully reset node at %s", address)
+			}
+		}(member.Address)
+	}
+
+	// Wait for all reset operations to complete
+	wg.Wait()
+	close(errors)
+
+	// Check for errors
+	errorList := []string{}
+	for err := range errors {
+		errorList = append(errorList, err)
+	}
+
+	// Return appropriate response
+	w.Header().Set("Content-Type", "application/json")
+	if len(errorList) > 0 {
+		if len(errorList) < len(members) {
+			// Partial success
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status":  "partial_success",
+				"message": "Some nodes were reset successfully, but errors occurred with others",
+				"errors":  errorList,
+			})
+		} else {
+			// Complete failure
+			w.WriteHeader(http.StatusInternalServerError)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"status":  "error",
+				"message": "Failed to reset any nodes",
+				"errors":  errorList,
+			})
+		}
+	} else {
+		// Complete success
+		json.NewEncoder(w).Encode(map[string]string{
+			"status":  "success",
+			"message": "All nodes reset successfully",
+		})
+	}
+}
+
 // main function updated to use ServeMux and apply CORS correctly.
 func main() {
 	middleware := NewMiddleware()
@@ -446,6 +567,7 @@ func main() {
 
 	mux.HandleFunc("/current-leader", middleware.handleGetCurrentLeader)
 
+	mux.HandleFunc("/reset", handleMiddlewareReset)
 	// Register the main middleware handler for all other paths (e.g., /asia/query)
 	// The Middleware struct itself implements ServeHTTP for this purpose.
 	mux.Handle("/", middleware)
