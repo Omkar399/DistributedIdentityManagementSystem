@@ -1,26 +1,68 @@
-# DistributedIdentityManagementSystem
-An Identity management system that is used to track ID's region wise. The system allows admins to create/assign, update and delete roles/access to users. 
+# Distributed Identity Management System
+An Identity management system used to track IDs region-wise. The system allows admins to create/assign, update, and delete roles/access to users across a distributed network of nodes.
+
+## System Features
+- **User Management**: Create, update, and delete user identities across distributed nodes
+- **Real-time Monitoring**: View replication status, operation history, and node health
+- **Node Control**: Start/stop nodes to simulate network failures and recovery
+- **Transaction Logs**: Inspect operation logs showing system activity
 
 ## System Design
-+ Membership List: Membership Lists are used to keep track of which processes to send the multicast messages to. 
-  + Membership List runs as an individual service where all nodes initially send a hearbeat to the server.
-  + A key is created w.r.t to that node in the server and a lease is attached to it with an expiry time.
-    + The lease is automatically renewed when successive heartbeats are recieved.
-    + The node is removed if it does not send a fresh heartbeat before its lease expires.
+### Backend Architecture
++ **Membership List**: Tracks which processes receive multicast messages
+  + Runs as an individual service where all nodes send heartbeats to the server
+  + Each node has a key in the server with a lease and expiry time
+    + Lease is automatically renewed with successive heartbeats
+    + Node is removed if no heartbeat is received before lease expiration
 
-+ Leader Election: 
-  + Uses Quorum based voting.
-  + Implements a raft like consensus algorithm to identify the leader.
++ **Leader Election**: 
+  + Uses Quorum-based voting
+  + Implements a Raft-like consensus algorithm to identify the leader
 
-+ Mutlicast By Spanning Tree : The updates made on the leader copy of the database is multicast to all the other replica nodes by mutlicasting the data in the spanning tree.
-  + The algorithm makes sure that the leader is always at the root of the tree and balances the tree using AVL tree algorithm. In this way the tree is constructed consistently across all nodes.
++ **Multicast Spanning Tree**: Updates from the leader database are propagated to replica nodes
+  + Algorithm ensures the leader is always the root of the tree
+  + Tree is balanced using AVL tree algorithm for consistent construction across nodes
+  + Optimizes network traffic during state updates
 
-+ Consistency: Whenever a new node joins or an existing node recovers it syncs with the current leader by requesting its trnasaction logs and updating it locally.
++ **Consistency & Fault Tolerance**: 
+  + New or recovered nodes sync with the current leader by requesting transaction logs
+  + Log-based recovery mechanism restores consistent state after failures
+  + System automatically handles node failures with data resynchronization
+
+### Frontend Components
++ **Node Control Panel**: Manage and monitor distributed nodes
++ **Replication Status**: View real-time consistency state across nodes
++ **Operations Queue**: Track operation propagation with status indicators
++ **User Management**: Interface for identity CRUD operations
++ **Log Viewer**: Transaction log inspection tool
 
 ## Deployment
-+ For ease of testing all all the services are defined as part of a single docker compose file.
-+ To run the system
-```
+### Backend
+```bash
+# Start the backend services
+cd backend
 docker compose up --build
 ```
 
+### Frontend
+```bash
+# Install dependencies
+cd frontend
+npm install
+
+# Run development server
+npm run serve
+
+# Build for production
+npm run build
+```
+
+## Accessing the Application
+Once both backend and frontend are running:
+- Frontend UI: http://localhost:8080
+- API Endpoints: http://localhost:8000
+
+## System Requirements
+- Docker and Docker Compose
+- Node.js v14+
+- Go 1.19+
