@@ -9,7 +9,6 @@
       <div class="form-group">
         <label for="password">Password:</label>
         <input type="password" id="password" v-model="newUser.password" required class="form-input">
-        <small>Warning: Password will be sent as provided. Ensure backend handles hashing if needed.</small>
       </div>
       <div class="form-group">
         <div class="permissions-label">Permissions:</div>
