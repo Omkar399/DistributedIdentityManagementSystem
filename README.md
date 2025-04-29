@@ -60,7 +60,7 @@ npm run build
 ## Accessing the Application
 Once both backend and frontend are running:
 - Frontend UI: http://localhost:8080
-- API Endpoints: http://localhost:8000
+- API Endpoints: http://localhost:8090
 
 ## System Requirements
 - Docker and Docker Compose
